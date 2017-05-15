@@ -12,8 +12,14 @@ def index_webpage(map, indexer)
   page = MetaInspector.new(map['url'])
   index[:page] = page.to_hash
   if indexer
-    indexer.each do |key, css|
-      index[key] = [page.parsed.css(css)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+    indexer.each do |key, value|
+      case value
+      when String
+        index[key] = [page.parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+      when Hash
+        selector, attribute = value['selector'], value['attribute']
+        index[key] = [page.parsed.css(value['selector'])].flatten.compact.collect { |n| n[value['attribute']].text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+      end
     end
   end
   yield index
