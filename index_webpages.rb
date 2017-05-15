@@ -18,7 +18,7 @@ def index_webpage(map, indexer)
         index[key] = [page.parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
       when Hash
         selector, attribute = value['selector'], value['attribute']
-        index[key] = [page.parsed.css(value['selector'])].flatten.compact.collect { |n| n[value['attribute']].strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+        index[key] = [page.parsed.css(value['selector'])].flatten.compact.collect { |n| n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
       end
     end
   end
