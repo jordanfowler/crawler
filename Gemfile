@@ -4,4 +4,4 @@ source 'https://rubygems.org'
 gem 'metainspector'
 gem 'yajl-ruby'
 gem 'nokogiri'
-
+gem 'parallel'

@@ -3,6 +3,7 @@ require 'fileutils'
 require 'active_support/all'
 require 'metainspector'
 require 'yaml'
+require 'parallel'
 
 # make this editable via ENV variable
 DATA_DIR="/Volumes/Houston/Dumps/scraping".freeze
@@ -18,7 +19,9 @@ def index_webpage(map, indexer)
         index[key] = [page.parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
       when Hash
         selector, attribute = value['selector'], value['attribute']
-        index[key] = [page.parsed.css(value['selector'])].flatten.compact.collect { |n| n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+        index[key] = [page.parsed.css(value['selector'])].flatten.compact.collect do |n|
+          n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
+        end
       end
     end
   end
@@ -35,7 +38,7 @@ def process_from(folder, host, indexer=nil)
     indexer = YAML.load_file(File.join(DATA_DIR, "/#{host}/maps/#{folder}.indexer.yml"))
   end
 
-  Dir.glob(File.join(DATA_DIR, "/#{host}/maps/#{folder}/*")) do |_map|
+  Parallel.each(Dir.glob(File.join(DATA_DIR, "/#{host}/maps/#{folder}/*")), in_threads: 10) do |_map|
     map = JSON.parse(File.read(_map))
     next if File.exists?(map['file'])
     puts "Processing map: #{_map}"
