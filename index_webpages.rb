@@ -6,7 +6,7 @@ require 'yaml'
 require 'parallel'
 
 # make this editable via ENV variable
-DATA_DIR="/Volumes/Houston/Dumps/scraping".freeze
+DATA_DIR="/Volumes/Houston/Dumps/scraping"
 
 def index_webpage(map, indexer)
   index = {}
@@ -25,6 +25,9 @@ def index_webpage(map, indexer)
       end
     end
   end
+rescue => e
+  puts e.message
+ensure
   yield index
 end
 
@@ -33,17 +36,15 @@ def save_index(map, index, host, folder)
   File.open(map['file'], 'w+') { |f| f.write(JSON.generate(index)) }
 end
 
-def process_from(folder, host, indexer=nil)
-  if File.exists?(File.join(DATA_DIR, "/#{host}/maps/#{folder}.indexer.yml"))
-    indexer = YAML.load_file(File.join(DATA_DIR, "/#{host}/maps/#{folder}.indexer.yml"))
-  end
-
+def process_from(folder, host, indexer)
   Parallel.each(Dir.glob(File.join(DATA_DIR, "/#{host}/maps/#{folder}/*")), in_threads: 10) do |_map|
     map = JSON.parse(File.read(_map))
-    next if File.exists?(map['file'])
+    # next if File.exists?(map['file'])
     puts "Processing map: #{_map}"
     index_webpage(map, indexer) do |index|
-      save_index(map, index, host, folder)
+      unless index.empty?
+        save_index(map, index, host, folder)
+      end
     end
   end
 end
@@ -54,12 +55,18 @@ map_folder = File.join(DATA_DIR, "/#{website_uri.host}/maps/#{ARGV[1]}")
 
 if !ARGV[1].to_s.strip.empty? && File.exists?(map_folder)
   FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/indexes/#{ARGV[1]}")
-  FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/pages/#{ARGV[1]}")
   process_from(ARGV[1], website_uri.host)
 else
   Dir.glob(File.join(DATA_DIR, "/#{website_uri.host}/maps/*")) do |map_folder|
-    FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/indexes/#{map_folder}")
-    FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/page/#{ARGV[1]}")
-    process_from(map_folder, website_uri.host)
+    if File.directory?(map_folder)
+      folder_name = File.basename(map_folder)
+      indexer_file = File.join(DATA_DIR, "/#{website_uri.host}/maps/#{folder_name}.indexer.yml")
+      if File.exists?(indexer_file)
+        puts "Processing: #{map_folder}"
+        indexer = YAML.load_file(indexer_file)
+        FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/indexes/#{folder_name}")
+        process_from(folder_name, website_uri.host, indexer)
+      end
+    end
   end
 end

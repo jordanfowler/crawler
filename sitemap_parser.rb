@@ -13,6 +13,8 @@ class SitemapParser
       gz = Zlib::GzipReader.new(file)
       parser.parse(gz.read)
     rescue => e
+      puts "Error: #{e.message}"
+      file.rewind
       parser.parse(file)
     end
 
@@ -33,6 +35,7 @@ class SitemapParser
       gz = Zlib::GzipReader.new(file)
       parser.parse(gz.read)
     rescue => e
+      puts "Error: #{e.message}"
       file.rewind
       parser.parse(file)
     end

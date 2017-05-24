@@ -3,6 +3,7 @@ require 'open-uri'
 require 'fileutils'
 require './sitemap_parser'
 require 'optparse'
+require 'parallel'
 
 # make this editable via ENV variable
 DATA_DIR="/Volumes/Houston/Dumps/scraping"
@@ -14,7 +15,7 @@ def save_sitemap(url)
   file = File.join(DATA_DIR, "/#{uri.host}/sitemaps/", uri.path.gsub('/', '-'))
   File.open(file, 'w') { |f| f.write(sitemap.read) }
 
-  SitemapParser.parse_sitemaps(url) do |sitemap_url|
+  Parallel.each(SitemapParser.parse_sitemaps(url), in_threads: 10) do |sitemap_url|
     save_sitemap(sitemap_url)
   end
 rescue => e
