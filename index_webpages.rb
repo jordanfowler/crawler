@@ -69,17 +69,21 @@ class WebpageIndexer
     indexer = YAML.load_file(indexer_file)
 
     Parallel.each(webpage_urls.shuffle, in_threads: 10) do |url, info|
-      puts "Indexing #{url}"
-      file_name = File.basename(url)
-      file_path = File.join(indexes_dir, file_name)
-      cache_path = File.join(caches_dir, "#{file_name}.html")
-      cache = File.read(cache_path) if File.exists?(cache_path)
+      begin
+        puts "Indexing #{url}"
+        file_name = File.basename(url)
+        file_path = File.join(indexes_dir, file_name)
+        cache_path = File.join(caches_dir, "#{file_name}.html")
+        cache = File.read(cache_path) if File.exists?(cache_path)
 
-      index_webpage(url, indexer, cache) do |page_index, page_body|
-        unless page_index.empty?
-          File.open(file_path, 'w+') { |f| f.write(JSON.generate(page_index)) }
-          File.open(cache_path, 'w+') { |f| f.write(page_body) }
+        index_webpage(url, indexer, cache) do |page_index, page_body|
+          unless page_index.empty?
+            File.open(file_path, 'w+') { |f| f.write(JSON.generate(page_index)) }
+            File.open(cache_path, 'w+') { |f| f.write(page_body) }
+          end
         end
+      rescue => e
+        puts e.message
       end
     end
   end
