@@ -70,8 +70,7 @@ class WebpageIndexer
 
     Parallel.each(webpage_urls.shuffle, in_threads: 10) do |url, info|
       puts "Indexing #{url}"
-      uri = URI.parse(url)
-      file_name = uri.path.parameterize
+      file_name = File.basename(url)
       file_path = File.join(indexes_dir, file_name)
       cache_path = File.join(caches_dir, "#{file_name}.html")
       cache = File.read(cache_path) if File.exists?(cache_path)
