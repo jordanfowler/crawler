@@ -68,8 +68,7 @@ class WebpageIndexer
     raise "Could not find indexer: #{indexer_file}" unless File.exists?(indexer_file)
     indexer = YAML.load_file(indexer_file)
 
-    # Parallel.each(webpage_urls, in_threads: 10) do |url, info|
-    webpage_urls.shuffle.each do |url, info|
+    Parallel.each(webpage_urls, in_threads: 10) do |url, info|
       puts "Indexing #{url}"
       uri = URI.parse(url)
       file_name = uri.path.parameterize
