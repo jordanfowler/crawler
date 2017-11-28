@@ -18,7 +18,7 @@ def save_page(url, dir_name)
   puts "Saving map: #{map_file}"
   File.open(map_file, 'w') { |f| f.write(JSON.generate(map)) }
 rescue => e
-  puts "Failed to fetch: #{url}"
+  puts "Failed to save: #{url}"
   puts e.message
 end
 

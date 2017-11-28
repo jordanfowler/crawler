@@ -22,6 +22,8 @@ def index_webpage(map, indexer)
         index[key] = [page.parsed.css(value['selector'])].flatten.compact.collect do |n|
           n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
         end
+      when Array
+        index[key] = value
       end
     end
   end
@@ -39,7 +41,7 @@ end
 def process_from(folder, host, indexer)
   Parallel.each(Dir.glob(File.join(DATA_DIR, "/#{host}/maps/#{folder}/*")), in_threads: 10) do |_map|
     map = JSON.parse(File.read(_map))
-    # next if File.exists?(map['file'])
+    next if File.exists?(map['file'])
     puts "Processing map: #{_map}"
     index_webpage(map, indexer) do |index|
       unless index.empty?
