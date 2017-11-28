@@ -1,51 +1,89 @@
+require 'optparse'
+require 'ostruct'
 require 'uri'
 require 'open-uri'
 require 'fileutils'
 require 'active_support/all'
 require 'json'
+require 'pp'
 require './sitemap_parser'
-require 'parallel'
 
-# make this editable via ENV variable
-DATA_DIR="/Volumes/Houston/Dumps/scraping"
+class OptionsParser
+  def self.parse(args)
+    options = OpenStruct.new
+    opt_parser = OptionParser.new do |opts|
+      opts.banner = "Usage: map_webpages.rb URL [OPTIONS]"
 
-def save_page(url, dir_name)
-  uri = URI.parse(url)
-  index_file = File.join(DATA_DIR, "/#{uri.host}/indexes/#{dir_name}/#{uri.path.parameterize}")
-  map = { url: url, file: index_file }
-  map_file = File.join(DATA_DIR, "/#{uri.host}/maps/#{dir_name}/#{uri.path.parameterize}")
+      opts.on('-d', '--data_dir DATA_DIR',
+              'Directory to store sitemaps') do |data_dir|
+        options.data_dir = data_dir
+      end
 
-  puts "Saving map: #{map_file}"
-  File.open(map_file, 'w') { |f| f.write(JSON.generate(map)) }
-rescue => e
-  puts "Failed to save: #{url}"
-  puts e.message
+      opts.on('-s', '--sitemap SITEMAP',
+              'Sitemap to process') do |sitemap|
+        options.sitemap = sitemap
+      end
+
+      opts.on_tail("-h", "--help", "Show this message") do
+        puts opts
+        exit
+      end
+    end
+    opt_parser.parse!(args)
+    options
+  end
 end
 
-# Main
-website_uri = URI.parse(ARGV[0])
-sitemap_file = File.join(DATA_DIR, "/#{website_uri.host}/sitemaps/#{ARGV[1]}")
+class WebpageMapper
+  attr_reader :website_uri, :options, :data_dir
 
-if !ARGV[1].to_s.strip.empty? && File.exists?(sitemap_file)
-  puts "Processing #{sitemap_file}"
-
-  dir_name = File.basename(sitemap_file).parameterize
-  FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/maps/#{dir_name}")
-
-  SitemapParser.parse_pages(sitemap_file) do |page_url|
-    save_page(page_url, dir_name)
+  def initialize(url, options = OpenStruct.new)
+    @website_uri = URI.parse(url)
+    @options = options
+    @data_dir = File.join(@options.data_dir, Date.today.to_s, @website_uri.host)
   end
-else
-  Dir.glob(File.join(DATA_DIR, "/#{website_uri.host}/sitemaps/*")) do |sitemap_file|
-    puts "Processing #{sitemap_file}"
 
-    dir_name = File.basename(sitemap_file).parameterize
-    if File.exists?(File.join(DATA_DIR, "/#{website_uri.host}/maps/#{dir_name}.indexer.yml"))
-      FileUtils.mkdir_p File.join(DATA_DIR, "/#{website_uri.host}/maps/#{dir_name}")
+  def webpage_urls
+    @webpage_urls ||= JSON.parse(File.read(File.join(data_dir, 'map.json')))
+  rescue
+    @webpage_urls = {}
+  end
 
-      Parallel.each(SitemapParser.parse_pages(sitemap_file), in_threads: 10) do |page_url|
-        save_page(page_url, dir_name)
+  def run!
+    sitemap_dir = File.join(options.data_dir, Date.today.to_s, website_uri.host, 'sitemaps')
+
+    if options.sitemap && File.exists?(File.join(sitemap_dir, options.sitemap))
+      sitemap_file = File.join(sitemap_dir, options.sitemap)
+      puts "Processing #{sitemap_file}"
+      process_sitemap(sitemap_file)
+    else
+      Dir.glob(File.join(sitemap_dir, '*')) do |sitemap_file|
+        puts "Processing #{sitemap_file}"
+        process_sitemap(sitemap_file)
+      end
+    end
+
+    save_map_file!
+  end
+
+  def process_sitemap(sitemap_file)
+    SitemapParser.parse_pages(sitemap_file) do |page_url|
+      webpage_urls[page_url] ||= {}
+      webpage_urls[page_url]['sitemaps'] ||= []
+      unless webpage_urls[page_url]['sitemaps'].include?(sitemap_file)
+        webpage_urls[page_url]['sitemaps'] << File.basename(sitemap_file)
       end
     end
   end
+
+  def save_map_file!
+    File.write(File.join(data_dir, 'map.json'), JSON.generate(@webpage_urls))
+  end
 end
+
+options = OptionsParser.parse(ARGV)
+url = ARGV.pop
+raise "Missing required URL parameter" unless url
+raise "Missing required DATA_DIR parameter" unless options.data_dir
+mapper = WebpageMapper.new(url, options)
+mapper.run!
