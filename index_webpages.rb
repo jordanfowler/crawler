@@ -114,7 +114,7 @@ class WebpageIndexer
                 page_index[key] = page_index[key].merge(JSON.parse(match.first))
               end
             rescue => e
-              puts "e.message"
+              puts e.message
             end
           end
         elsif value['selector']
