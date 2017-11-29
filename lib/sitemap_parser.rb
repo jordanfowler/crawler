@@ -1,6 +1,6 @@
 require 'nokogiri'
 require 'zlib'
-require './sitemap_handler'
+require 'sitemap_handler'
 
 class SitemapParser
   def self.parse_sitemaps(url)

@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+
+require 'optparse'
+require 'ostruct'
+require 'webpage_indexer'
+
+class OptionsParser
+  def self.parse(args)
+    options = OpenStruct.new
+    opt_parser = OptionParser.new do |opts|
+      opts.banner = "Usage: map_webpages.rb URL [OPTIONS]"
+
+      opts.on('-d', '--data_dir DATA_DIR',
+              'Directory to store sitemaps') do |data_dir|
+        options.data_dir = data_dir
+      end
+
+      opts.on('-i', '--indexer INDEXER',
+              'Indexer for processing webpages') do |indexer|
+        options.indexer = indexer
+      end
+
+      opts.on_tail("-h", "--help", "Show this message") do
+        puts opts
+        exit
+      end
+    end
+    opt_parser.parse!(args)
+    options
+  end
+end
+
+options = OptionsParser.parse(ARGV)
+url = ARGV.pop
+raise "Missing required URL parameter" unless url
+raise "Missing required DATA_DIR parameter" unless options.data_dir
+mapper = WebpageIndexer.new(url, options)
+mapper.run!

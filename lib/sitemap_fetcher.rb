@@ -1,32 +1,9 @@
-require 'optparse'
 require 'ostruct'
 require 'uri'
 require 'open-uri'
 require 'fileutils'
 require 'parallel'
-require 'pp'
-require './sitemap_parser'
-
-class OptionsParser
-  def self.parse(args)
-    options = OpenStruct.new
-    opt_parser = OptionParser.new do |opts|
-      opts.banner = "Usage: fetch_sitemaps.rb URL [OPTIONS]"
-
-      opts.on('-d', '--data_dir DATA_DIR',
-              'Directory to store sitemaps') do |data_dir|
-        options.data_dir = data_dir
-      end
-
-      opts.on_tail("-h", "--help", "Show this message") do
-        puts opts
-        exit
-      end
-    end
-    opt_parser.parse!(args)
-    options
-  end
-end
+require 'sitemap_parser'
 
 class SitemapFetcher
   attr_reader :website_uri, :options, :data_dir
@@ -84,8 +61,3 @@ class SitemapFetcher
   end
 end
 
-options = OptionsParser.parse(ARGV)
-url = ARGV.pop
-raise "Missing required URL parameter" unless url
-raise "Missing required DATA_DIR parameter" unless options.data_dir
-SitemapFetcher.new(url, options).run!
