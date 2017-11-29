@@ -4,6 +4,7 @@ require 'open-uri'
 require 'fileutils'
 require 'active_support/all'
 require 'json'
+require 'sitemap_parser'
 
 class WebpageMapper
   attr_reader :website_uri, :options, :data_dir

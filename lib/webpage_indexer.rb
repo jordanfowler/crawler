@@ -6,6 +6,7 @@ require 'metainspector'
 require 'mida'
 require 'yaml'
 require 'parallel'
+require 'json/ld'
 
 ### MONKEYPATCHING
 class Hash
@@ -125,8 +126,12 @@ class WebpageIndexer
       end
     end
 
+    # Parse Microdata
     doc = Mida::Document.new(page_parsed, url)
     page_index[:microdata] = doc.items.collect(&:to_h)
+
+    # Parse JSON-LD
+    page_index[:json_ld] = page_parsed.css('script[type="application/ld+json"]').to_a.collect { |script| JSON.parse(script) }
   rescue => e
     puts e.message
   ensure

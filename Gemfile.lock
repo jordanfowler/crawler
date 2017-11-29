@@ -3,6 +3,7 @@ GEM
   specs:
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
+    concurrent-ruby (1.0.5)
     domain_name (0.5.20170404)
       unf (>= 0.0.5, < 1.0.0)
     faraday (0.13.1)
@@ -17,8 +18,14 @@ GEM
     faraday_middleware (0.12.2)
       faraday (>= 0.7.4, < 1.0)
     fastimage (2.1.0)
+    hamster (3.0.0)
+      concurrent-ruby (~> 1.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
+    json-ld (2.1.7)
+      multi_json (~> 1.12)
+      rdf (~> 2.2, >= 2.2.8)
+    link_header (0.0.8)
     metainspector (5.4.1)
       addressable (~> 2.5)
       faraday (~> 0.11)
@@ -33,12 +40,16 @@ GEM
       addressable (~> 2.4)
       nokogiri (>= 1.6)
     mini_portile2 (2.3.0)
+    multi_json (1.12.2)
     multipart-post (2.0.0)
     nesty (1.0.2)
     nokogiri (1.8.1)
       mini_portile2 (~> 2.3.0)
     parallel (1.12.0)
     public_suffix (3.0.1)
+    rdf (2.2.12)
+      hamster (~> 3.0)
+      link_header (~> 0.0, >= 0.0.8)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.4)
@@ -48,6 +59,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  json-ld
   metainspector
   mida
   nokogiri
