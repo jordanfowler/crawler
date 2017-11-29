@@ -8,6 +8,7 @@ require 'mida'
 require 'yaml'
 require 'parallel'
 
+### MONKEYPATCHING
 class Hash
   def shuffle
     Hash[self.to_a.sample(self.length)]
@@ -17,6 +18,24 @@ class Hash
     self.replace(self.shuffle)
   end
 end
+
+module Mida
+  class Itemprop
+    def extract_property_value
+      element = @element.name
+      if non_textcontent_element?(element)
+        attribute = NON_TEXTCONTENT_ELEMENTS[element]
+        if @element.attribute(attribute)
+          value = @element.attribute(attribute).value
+          url_attribute?(attribute) ? make_absolute_url(value) : value
+        end
+      else
+        @element.inner_text.strip
+      end
+    end
+  end
+end
+###
 
 class OptionsParser
   def self.parse(args)
