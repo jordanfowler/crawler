@@ -21,6 +21,7 @@ end
 
 module Mida
   class Itemprop
+    private
     def extract_property_value
       element = @element.name
       if non_textcontent_element?(element)
@@ -64,14 +65,13 @@ class OptionsParser
 end
 
 class WebpageIndexer
-  attr_reader :website_uri, :options, :data_dir, :indexes_dir, :indexer_file, :caches_dir
+  attr_reader :website_uri, :options, :data_dir, :indexes_dir, :caches_dir
 
   def initialize(url, options = OpenStruct.new)
     @website_uri = URI.parse(url)
     @options = options
     @data_dir = File.join(@options.data_dir, Date.today.to_s, @website_uri.host)
     @indexes_dir = File.join(data_dir, 'indexes')
-    @indexer_file = @options.indexer
     @caches_dir = File.join(data_dir, 'caches')
 
     FileUtils.mkdir_p @indexes_dir
@@ -85,8 +85,7 @@ class WebpageIndexer
   end
 
   def run!
-    raise "Could not find indexer: #{indexer_file}" unless File.exists?(indexer_file)
-    indexer = YAML.load_file(indexer_file)
+    indexer = YAML.load_file(@options.indexer) if @options.indexer
 
     Parallel.each(webpage_urls.shuffle, in_threads: 10) do |url, info|
       begin
@@ -96,7 +95,7 @@ class WebpageIndexer
         cache_path = File.join(caches_dir, "#{file_name}.html")
         cache = File.read(cache_path) if File.exists?(cache_path)
 
-        index_webpage(url, indexer, cache) do |page_index, page_body|
+        index_webpage(url, cache, indexer) do |page_index, page_body|
           unless page_index.empty?
             File.open(file_path, 'w+') { |f| f.write(JSON.generate(page_index)) }
             File.open(cache_path, 'w+') { |f| f.write(page_body) }
@@ -108,7 +107,7 @@ class WebpageIndexer
     end
   end
 
-  def index_webpage(url, indexer, page_body=nil)
+  def index_webpage(url, page_body=nil, indexer=nil)
     page_index = {
       url: url
     }
@@ -121,33 +120,35 @@ class WebpageIndexer
       page_parsed = page.parsed
     end
 
-    indexer.each do |key, value|
-      case value
-      when String
-        page_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
-      when Hash
-        if value['regex']
-          regex = Regexp.new(value['regex'])
-          matches = page_body.scan(regex)
-          matches.each do |match|
-            begin
-              case value['type']
-              when 'json'
-                page_index[key] ||= {}
-                page_index[key] = page_index[key].merge(JSON.parse(match.first))
+    if indexer
+      indexer.each do |key, value|
+        case value
+        when String
+          page_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+        when Hash
+          if value['regex']
+            regex = Regexp.new(value['regex'])
+            matches = page_body.scan(regex)
+            matches.each do |match|
+              begin
+                case value['type']
+                when 'json'
+                  page_index[key] ||= {}
+                  page_index[key] = page_index[key].merge(JSON.parse(match.first))
+                end
+              rescue => e
+                puts e.message
               end
-            rescue => e
-              puts e.message
+            end
+          elsif value['selector']
+            selector, attribute = value['selector'], value['attribute']
+            page_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
+              n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
             end
           end
-        elsif value['selector']
-          selector, attribute = value['selector'], value['attribute']
-          page_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
-            n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
-          end
+        when Array
+          page_index[key] = value
         end
-      when Array
-        page_index[key] = value
       end
     end
 
@@ -164,6 +165,5 @@ options = OptionsParser.parse(ARGV)
 url = ARGV.pop
 raise "Missing required URL parameter" unless url
 raise "Missing required DATA_DIR parameter" unless options.data_dir
-raise "Missing required INDEXER parameter" unless options.indexer
 mapper = WebpageIndexer.new(url, options)
 mapper.run!
