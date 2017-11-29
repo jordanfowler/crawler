@@ -103,7 +103,7 @@ class WebpageIndexer
     end
 
     doc = Mida::Document.new(page_parsed, url)
-    page_index[:microdata] = doc.each.collect(&:to_h)
+    page_index[:microdata] = doc.items.collect(&:to_h)
 
     indexer.each do |key, value|
       case value
