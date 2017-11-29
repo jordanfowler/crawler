@@ -102,9 +102,6 @@ class WebpageIndexer
       page_parsed = page.parsed
     end
 
-    doc = Mida::Document.new(page_parsed, url)
-    page_index[:microdata] = doc.items.collect(&:to_h)
-
     indexer.each do |key, value|
       case value
       when String
@@ -134,6 +131,9 @@ class WebpageIndexer
         page_index[key] = value
       end
     end
+
+    doc = Mida::Document.new(page_parsed, url)
+    page_index[:microdata] = doc.items.collect(&:to_h)
   rescue => e
     puts e.message
   ensure
