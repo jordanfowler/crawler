@@ -4,6 +4,7 @@ require 'json'
 require 'fileutils'
 require 'active_support/all'
 require 'metainspector'
+require 'mida'
 require 'yaml'
 require 'parallel'
 
@@ -100,6 +101,9 @@ class WebpageIndexer
       page_body = page.to_s
       page_parsed = page.parsed
     end
+
+    doc = Mida::Document.new(page_parsed, url)
+    page_index[:microdata] = doc.each.collect(&:to_h)
 
     indexer.each do |key, value|
       case value
