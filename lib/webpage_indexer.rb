@@ -7,6 +7,7 @@ require 'mida'
 require 'yaml'
 require 'parallel'
 require 'json/ld'
+require 'digest'
 
 ### MONKEYPATCHING
 class Hash
@@ -61,11 +62,11 @@ class WebpageIndexer
   def run!
     indexer = YAML.load_file(@options.indexer) if @options.indexer
 
-    Parallel.each_with_index(webpage_urls.shuffle, in_threads: 10) do |page, index|
+    Parallel.each(webpage_urls.shuffle, in_threads: 10) do |page|
       url, info = page
       begin
         puts "Indexing #{url}"
-        file_name = "page-#{index}"
+        file_name = Digest::MD5.hexdigest(url)
         file_path = File.join(indexes_dir, "#{file_name}.json")
         cache_path = File.join(caches_dir, "#{file_name}.html")
         cache = File.read(cache_path) if File.exists?(cache_path)

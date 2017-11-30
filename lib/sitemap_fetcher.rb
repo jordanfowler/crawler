@@ -3,6 +3,7 @@ require 'uri'
 require 'open-uri'
 require 'fileutils'
 require 'parallel'
+require 'digest'
 require 'sitemap_parser'
 
 class SitemapFetcher
@@ -45,11 +46,8 @@ class SitemapFetcher
 
   def save_sitemap(url, data_dir)
     puts "Saving #{url}"
-    uri = URI.parse(url)
-    sitemap = OpenURI.open_uri(uri.to_s)
-    file = File.join(data_dir, uri.path)
-    dir = file.sub(File.basename(file), '')
-    FileUtils.mkdir_p(dir)
+    sitemap = OpenURI.open_uri(url)
+    file = File.join(data_dir, Digest::MD5.hexdigest(url))
     File.open(file, 'w') { |f| f.write(sitemap.read) }
 
     Parallel.each(SitemapParser.parse_sitemaps(url), in_threads: 10) do |sitemap_url|
@@ -60,4 +58,3 @@ class SitemapFetcher
     puts e.message
   end
 end
-
