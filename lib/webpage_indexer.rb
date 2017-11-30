@@ -96,11 +96,11 @@ class WebpageIndexer
     end
 
     # Parse with custom indexer if present
-    parse_custom(indexer, page_index, page_body, page_parsed) if indexer
+    parse_custom(url, indexer, page_index, page_body, page_parsed) if indexer
     # Parse Microdata
-    parse_microdata(page_index, page_parsed)
+    parse_microdata(url, page_index, page_parsed)
     # Parse JSON-LD
-    parse_json_ld(page_index, page_parsed)
+    parse_json_ld(url, page_index, page_parsed)
   rescue => e
     puts e.message
   ensure
@@ -108,7 +108,7 @@ class WebpageIndexer
   end
 
   protected
-  def parse_json_ld(page_index, page_parsed)
+  def parse_json_ld(url, page_index, page_parsed)
     page_index[:json_ld] = page_parsed.css('script[type="application/ld+json"]').to_a.collect do |script|
       JSON.parse(script)
     end
@@ -116,14 +116,14 @@ class WebpageIndexer
     puts e.message
   end
 
-  def parse_microdata(page_index, page_parsed)
+  def parse_microdata(url, page_index, page_parsed)
     doc = Mida::Document.new(page_parsed, url)
     page_index[:microdata] = doc.items.collect(&:to_h)
   rescue => e
     puts e.message
   end
 
-  def parse_custom(indexer, page_index, page_body, page_parsed)
+  def parse_custom(url, indexer, page_index, page_body, page_parsed)
     indexer.each do |key, value|
       case value
       when String

@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+
+require 'optparse'
+require 'ostruct'
+require 'sitemap_fetcher'
+require 'webpage_mapper'
+require 'webpage_indexer'
+
+class OptionsParser
+  def self.parse(args)
+    options = OpenStruct.new
+    opt_parser = OptionParser.new do |opts|
+      opts.banner = "Usage: scrape_parallel FILE_PATH [OPTIONS]"
+
+      opts.on('-d', '--data_dir DATA_DIR',
+              'Directory to store sitemaps') do |data_dir|
+        options.data_dir = data_dir
+      end
+
+      opts.on('-s', '--sitemap SITEMAP',
+              'Sitemap to process') do |sitemap|
+        options.sitemap = sitemap
+      end
+
+      opts.on('-i', '--indexer INDEXER',
+              'Indexer for processing webpages') do |indexer|
+        options.indexer = indexer
+      end
+
+      opts.on('-c', '--count CONCURRENCY',
+              'Number of websites to scrape in parallel') do |concurrency|
+        options.concurrency = concurrency.to_i
+        options.concurrency = 5 if options.concurrency == 0
+      end
+
+      opts.on_tail("-h", "--help", "Show this message") do
+        puts opts
+        exit
+      end
+    end
+    opt_parser.parse!(args)
+    options
+  end
+end
+
+options = OptionsParser.parse(ARGV)
+file_path = ARGV.pop
+raise "Missing required FILE_PATH parameter" unless file_path
+raise "Missing required DATA_DIR parameter" unless options.data_dir
+
+Parallel.each(File.read(file_path).split, in_threads: options.concurrency) do |url|
+  SitemapFetcher.new(url, options).run!
+  WebpageMapper.new(url, options).run!
+  WebpageIndexer.new(url, options).run!
+end
