@@ -95,48 +95,65 @@ class WebpageIndexer
       page_parsed = page.parsed
     end
 
-    if indexer
-      indexer.each do |key, value|
-        case value
-        when String
-          page_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
-        when Hash
-          if value['regex']
-            regex = Regexp.new(value['regex'])
-            matches = page_body.scan(regex)
-            matches.each do |match|
-              begin
-                case value['type']
-                when 'json'
-                  page_index[key] ||= {}
-                  page_index[key] = page_index[key].merge(JSON.parse(match.first))
-                end
-              rescue => e
-                puts e.message
-              end
-            end
-          elsif value['selector']
-            selector, attribute = value['selector'], value['attribute']
-            page_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
-              n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
-            end
-          end
-        when Array
-          page_index[key] = value
-        end
-      end
-    end
-
+    # Parse with custom indexer if present
+    parse_custom(indexer, page_index, page_body, page_parsed) if indexer
     # Parse Microdata
-    doc = Mida::Document.new(page_parsed, url)
-    page_index[:microdata] = doc.items.collect(&:to_h)
-
+    parse_microdata(page_index, page_parsed)
     # Parse JSON-LD
-    page_index[:json_ld] = page_parsed.css('script[type="application/ld+json"]').to_a.collect { |script| JSON.parse(script) }
+    parse_json_ld(page_index, page_parsed)
   rescue => e
     puts e.message
   ensure
     yield page_index, page_body
   end
-end
 
+  protected
+  def parse_json_ld(page_index, page_parsed)
+    page_index[:json_ld] = page_parsed.css('script[type="application/ld+json"]').to_a.collect do |script|
+      JSON.parse(script)
+    end
+  rescue => e
+    puts e.message
+  end
+
+  def parse_microdata(page_index, page_parsed)
+    doc = Mida::Document.new(page_parsed, url)
+    page_index[:microdata] = doc.items.collect(&:to_h)
+  rescue => e
+    puts e.message
+  end
+
+  def parse_custom(indexer, page_index, page_body, page_parsed)
+    indexer.each do |key, value|
+      case value
+      when String
+        page_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+      when Hash
+        if value['regex']
+          regex = Regexp.new(value['regex'])
+          matches = page_body.scan(regex)
+          matches.each do |match|
+            begin
+              case value['type']
+              when 'json'
+                page_index[key] ||= {}
+                page_index[key] = page_index[key].merge(JSON.parse(match.first))
+              end
+            rescue => e
+              puts e.message
+            end
+          end
+        elsif value['selector']
+          selector, attribute = value['selector'], value['attribute']
+          page_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
+            n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
+          end
+        end
+      when Array
+        page_index[key] = value
+      end
+    end
+  rescue => e
+    puts e.message
+  end
+end

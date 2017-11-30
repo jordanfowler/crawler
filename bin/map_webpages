@@ -10,7 +10,7 @@ class OptionsParser
   def self.parse(args)
     options = OpenStruct.new
     opt_parser = OptionParser.new do |opts|
-      opts.banner = "Usage: map_webpages.rb URL [OPTIONS]"
+      opts.banner = "Usage: map_webpages URL [OPTIONS]"
 
       opts.on('-d', '--data_dir DATA_DIR',
               'Directory to store sitemaps') do |data_dir|
@@ -36,5 +36,4 @@ options = OptionsParser.parse(ARGV)
 url = ARGV.pop
 raise "Missing required URL parameter" unless url
 raise "Missing required DATA_DIR parameter" unless options.data_dir
-mapper = WebpageMapper.new(url, options)
-mapper.run!
+WebpageMapper.new(url, options).run!
