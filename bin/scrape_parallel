@@ -50,7 +50,7 @@ file_path = ARGV.pop
 raise "Missing required FILE_PATH parameter" unless file_path
 raise "Missing required DATA_DIR parameter" unless options.data_dir
 
-Parallel.each(File.read(file_path).split, in_threads: options.concurrency) do |url|
+Parallel.each(File.read(file_path).split, in_processes: options.concurrency) do |url|
   SitemapFetcher.new(url, options).run!
   WebpageMapper.new(url, options).run!
   WebpageIndexer.new(url, options).run!
