@@ -7,6 +7,7 @@ require 'ostruct'
 require 'sitemap_fetcher'
 require 'webpage_mapper'
 require 'webpage_indexer'
+require 'csv'
 
 class OptionsParser
   def self.parse(args)
@@ -19,18 +20,8 @@ class OptionsParser
         options.data_dir = data_dir
       end
 
-      opts.on('-s', '--sitemap SITEMAP',
-              'Sitemap to process') do |sitemap|
-        options.sitemap = sitemap
-      end
-
-      opts.on('-i', '--indexer INDEXER',
-              'Indexer for processing webpages') do |indexer|
-        options.indexer = indexer
-      end
-
       opts.on('-c', '--count CONCURRENCY',
-              'Number of websites to scrape in parallel') do |concurrency|
+              'Number of websites to scrape in parallel (default: 5)') do |concurrency|
         options.concurrency = concurrency.to_i
         options.concurrency = 5 if options.concurrency == 0
       end
@@ -50,8 +41,31 @@ file_path = ARGV.pop
 raise "Missing required FILE_PATH parameter" unless file_path
 raise "Missing required DATA_DIR parameter" unless options.data_dir
 
-Parallel.each(File.read(file_path).split, in_processes: options.concurrency) do |url|
-  SitemapFetcher.new(url, options).run!
-  WebpageMapper.new(url, options).run!
-  WebpageIndexer.new(url, options).run!
+rows = CSV.read(file_path)
+header = rows.shift
+sitemap_columns = header.each_index.select { |i| header[i] == 'sitemap' }
+
+Parallel.each(rows, in_processes: options.concurrency) do |row|
+  if header.index('website_url')
+    url = row[header.index('website_url')]
+    sitemaps = sitemap_columns.collect { |i| row[i] }.compact
+
+    if sitemaps.empty? || sitemaps.all?(&:empty?)
+      SitemapFetcher.new(url, options).run!
+      WebpageMapper.new(url, options).run!
+    else
+      SitemapFetcher.new(url, options).run! do |sitemaps_map|
+        _sitemaps = sitemaps_map.select { |digest, remote_url| sitemaps.any? { |s| remote_url.match(/#{s}/) }  }.each do |digest|
+          _options = options.dup
+          _options.sitemap = digest
+          _options.url_pattern = row[header.index('url_pattern')]
+          _options.url_pattern = nil if _options.url_pattern == nil || _options.url_pattern.length == 0
+
+          WebpageMapper.new(url, _options).run!
+        end
+      end
+    end
+
+    WebpageIndexer.new(url, options).run!
+  end
 end
