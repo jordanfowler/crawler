@@ -29,6 +29,11 @@ class OptionsParser
         options.indexer = indexer
       end
 
+      opts.on('-u', '--url_pattern URL_PATTERN',
+              'Only index webpages matching this pattern') do |url_pattern|
+        options.url_pattern = url_pattern
+      end
+
       opts.on_tail("-h", "--help", "Show this message") do
         puts opts
         exit

@@ -24,8 +24,8 @@ class WebpageMapper
   def run!
     sitemap_dir = File.join(options.data_dir, Date.today.to_s, website_uri.host, 'sitemaps')
     sitemaps_map = JSON.parse(File.read(File.join(data_dir, 'sitemaps_map.json')))
-    sitemap_file = File.join(sitemap_dir, options.sitemap) if File.exists?(File.join(sitemap_dir, options.sitemap))
-    sitemap_file ||= File.join(sitemap_dir, sitemaps_map.find { |digest, url| url.match(/#{options.sitemap}/) }[0]) if sitemaps_map.any? { |digest,url| url.match(/#{options.sitemap}/) }
+    sitemap_file = File.join(sitemap_dir, options.sitemap) if options.sitemap && File.exists?(File.join(sitemap_dir, options.sitemap))
+    sitemap_file ||= File.join(sitemap_dir, sitemaps_map.find { |digest, url| url.match(/#{options.sitemap}/) }[0]) if options.sitemap && sitemaps_map.any? { |digest,url| url.match(/#{options.sitemap}/) }
 
     if sitemap_file
       puts "Processing #{sitemap_file}"
@@ -42,10 +42,12 @@ class WebpageMapper
 
   def process_sitemap(sitemap_file)
     SitemapParser.parse_pages(sitemap_file) do |page_url|
-      webpage_urls[page_url] ||= {}
-      webpage_urls[page_url]['sitemaps'] ||= []
-      unless webpage_urls[page_url]['sitemaps'].include?(sitemap_file)
-        webpage_urls[page_url]['sitemaps'] << File.basename(sitemap_file)
+      if !options.url_pattern || page_url.match(/#{options.url_pattern.to_s}/)
+        webpage_urls[page_url] ||= {}
+        webpage_urls[page_url]['sitemaps'] ||= []
+        unless webpage_urls[page_url]['sitemaps'].include?(sitemap_file)
+          webpage_urls[page_url]['sitemaps'] << File.basename(sitemap_file)
+        end
       end
     end
   end

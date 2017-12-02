@@ -49,23 +49,24 @@ Parallel.each(rows, in_processes: options.concurrency) do |row|
   if header.index('website_url')
     url = row[header.index('website_url')]
     sitemaps = sitemap_columns.collect { |i| row[i] }.compact
+    _options = options.dup
+    _options.url_pattern = row[header.index('url_pattern')]
+    _options.url_pattern = nil if _options.url_pattern == nil || _options.url_pattern.to_s.length == 0
 
     if sitemaps.empty? || sitemaps.all?(&:empty?)
-      SitemapFetcher.new(url, options).run!
-      WebpageMapper.new(url, options).run!
+      SitemapFetcher.new(url, _options).run!
+      WebpageMapper.new(url, _options).run!
+      WebpageIndexer.new(url, _options).run!
     else
-      SitemapFetcher.new(url, options).run! do |sitemaps_map|
-        _sitemaps = sitemaps_map.select { |digest, remote_url| sitemaps.any? { |s| remote_url.match(/#{s}/) }  }.each do |digest|
-          _options = options.dup
-          _options.sitemap = digest
-          _options.url_pattern = row[header.index('url_pattern')]
-          _options.url_pattern = nil if _options.url_pattern == nil || _options.url_pattern.length == 0
-
-          WebpageMapper.new(url, _options).run!
+      SitemapFetcher.new(url, _options).run! do |sitemaps_map|
+        sitemaps_map.each do |digest, remote_url|
+          if sitemaps.any? { |s| remote_url.match(/#{s}/) }
+            _options.sitemap = digest
+            WebpageMapper.new(url, _options).run!
+            WebpageIndexer.new(url, _options).run!
+          end
         end
       end
     end
-
-    WebpageIndexer.new(url, options).run!
   end
 end
