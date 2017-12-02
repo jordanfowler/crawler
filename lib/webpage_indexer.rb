@@ -60,7 +60,18 @@ class WebpageIndexer
   end
 
   def run!
-    indexer = YAML.load_file(@options.indexer) if @options.indexer
+    indexer_dir = File.join(options.data_dir, 'indexers')
+
+    if options.indexer
+      if File.exists?(options.indexer)
+        indexer_file = options.indexer
+      elsif File.exists?(File.join(indexer_dir, options.indexer))
+        indexer_file = File.join(indexer_dir, options.indexer)
+      end
+      if indexer_file
+        indexer = YAML.load_file(indexer_file)
+      end
+    end
 
     Parallel.each(webpage_urls.shuffle, in_threads: 10) do |page|
       url, info = page
