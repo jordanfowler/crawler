@@ -125,10 +125,12 @@ class WebpageIndexer
   end
 
   def parse_custom(url, indexer, page_index, page_body, page_parsed)
+    custom_index = {}
+
     indexer.each do |key, value|
       case value
       when String
-        page_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
+        custom_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
       when Hash
         if value['regex']
           regex = Regexp.new(value['regex'])
@@ -137,8 +139,9 @@ class WebpageIndexer
             begin
               case value['type']
               when 'json'
-                page_index[key] ||= {}
-                page_index[key] = page_index[key].merge(JSON.parse(match.first))
+                json = match.first.gsub(/([a-zA-Z]+):/, '"\1":')
+                custom_index[key] ||= {}
+                custom_index[key] = custom_index[key].merge(JSON.parse(json))
               end
             rescue => e
               puts e.message
@@ -146,15 +149,17 @@ class WebpageIndexer
           end
         elsif value['selector']
           selector, attribute = value['selector'], value['attribute']
-          page_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
+          custom_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
             n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
           end
         end
       when Array
-        page_index[key] = value
+        custom_index[key] = value
       end
     end
   rescue => e
     puts e.message
+  ensure
+    page_index[:custom] = custom_index
   end
 end

@@ -43,15 +43,17 @@ raise "Missing required DATA_DIR parameter" unless options.data_dir
 
 rows = CSV.read(file_path)
 header = rows.shift
+url_column = header.index('website_url')
 sitemap_columns = header.each_index.select { |i| header[i] == 'sitemap' }
+indexer_column = header.index('indexer')
 
 Parallel.each(rows, in_processes: options.concurrency) do |row|
   if header.index('website_url')
-    url = row[header.index('website_url')]
+    url = row[url_column]
     sitemaps = sitemap_columns.collect { |i| row[i] }.compact
     _options = options.dup
-    _options.url_pattern = row[header.index('url_pattern')]
-    _options.url_pattern = nil if _options.url_pattern == nil || _options.url_pattern.to_s.length == 0
+    _options.url_pattern = row[url_column].to_s.length == 0 ? nil : row[url_column]
+    _options.indexer = row[indexer_column].to_s.length == 0 ? nil : row[indexer_column]
 
     if sitemaps.empty? || sitemaps.all?(&:empty?)
       SitemapFetcher.new(url, _options).run!
