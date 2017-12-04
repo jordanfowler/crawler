@@ -150,7 +150,7 @@ class WebpageIndexer
             begin
               case value['type']
               when 'json'
-                json = match.first.gsub(/([\{,]{1}[ ]{0,})([a-zA-Z]+):/, '\1"\2":')
+                json = match.first.gsub(/([\{,\n ]{1,})([a-zA-Z]+):/, '\1"\2":')
                 custom_index[key] ||= {}
                 custom_index[key] = custom_index[key].merge(JSON.parse(json))
               end
