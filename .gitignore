@@ -1,1 +1,3 @@
-indexers
+pkgs
+packaging/*.tar.gz
+packaging/vendor

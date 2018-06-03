@@ -4,56 +4,56 @@ GEM
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
     concurrent-ruby (1.0.5)
-    domain_name (0.5.20170404)
+    domain_name (0.5.20180417)
       unf (>= 0.0.5, < 1.0.0)
-    faraday (0.13.1)
+    faraday (0.15.2)
       multipart-post (>= 1.2, < 3)
     faraday-cookie_jar (0.0.6)
       faraday (>= 0.7.4)
       http-cookie (~> 1.0.0)
     faraday-encoding (0.0.4)
       faraday
-    faraday-http-cache (2.0.0)
+    faraday-http-cache (1.3.1)
       faraday (~> 0.8)
     faraday_middleware (0.12.2)
       faraday (>= 0.7.4, < 1.0)
-    fastimage (2.1.0)
+    fastimage (2.1.3)
     hamster (3.0.0)
       concurrent-ruby (~> 1.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
-    json-ld (2.1.7)
+    json-ld (2.2.1)
       multi_json (~> 1.12)
-      rdf (~> 2.2, >= 2.2.8)
+      rdf (>= 2.2.8, < 4.0)
     link_header (0.0.8)
-    metainspector (5.4.1)
-      addressable (~> 2.5)
-      faraday (~> 0.11)
+    metainspector (5.4.0)
+      addressable (~> 2.4)
+      faraday (~> 0.9)
       faraday-cookie_jar (~> 0.0)
-      faraday-encoding (~> 0.0)
-      faraday-http-cache (~> 2.0)
-      faraday_middleware (~> 0.11)
-      fastimage (~> 2.1)
+      faraday-encoding (~> 0.0.3)
+      faraday-http-cache (~> 1.2)
+      faraday_middleware (~> 0.10)
+      fastimage (~> 2.0)
       nesty (~> 1.0)
-      nokogiri (~> 1.7)
+      nokogiri (~> 1.6)
     mida (0.4.0)
       addressable (~> 2.4)
       nokogiri (>= 1.6)
-    mini_portile2 (2.3.0)
-    multi_json (1.12.2)
+    mini_portile (0.6.2)
+    multi_json (1.13.1)
     multipart-post (2.0.0)
     nesty (1.0.2)
-    nokogiri (1.8.1)
-      mini_portile2 (~> 2.3.0)
-    parallel (1.12.0)
-    public_suffix (3.0.1)
-    rdf (2.2.12)
+    nokogiri (1.6.6.2)
+      mini_portile (~> 0.6.0)
+    parallel (1.12.1)
+    public_suffix (3.0.2)
+    rdf (3.0.2)
       hamster (~> 3.0)
       link_header (~> 0.0, >= 0.0.8)
     unf (0.1.4)
       unf_ext
-    unf_ext (0.0.7.4)
-    yajl-ruby (1.3.1)
+    unf_ext (0.0.6)
+    yajl-ruby (1.2.1)
 
 PLATFORMS
   ruby
@@ -62,12 +62,13 @@ DEPENDENCIES
   json-ld
   metainspector
   mida
-  nokogiri
+  nokogiri (= 1.6.6.2)
   parallel
-  yajl-ruby
+  unf_ext (= 0.0.6)
+  yajl-ruby (= 1.2.1)
 
 RUBY VERSION
-   ruby 2.4.0p0
+   ruby 2.2.2p95
 
 BUNDLED WITH
    1.14.6
