@@ -1,0 +1,14 @@
+#!env bash
+
+SCRAPE_DIR=$1
+CSV_FILE=$SCRAPE_DIR/all.csv
+CSV_HEADER="url_digest,url,brand_name,product_name,retail_price,sale_price,categories"
+
+echo $CSV_HEADER > $CSV_FILE
+
+for file in $SCRAPE_DIR/**/indexes/*.json; do
+	echo "Processing $file"
+    url_digest=${file##*/}
+	url_digest=${url_digest%.*}
+	echo $url_digest,$(jq -r '[.url, .custom.brand[0], .custom.name[0], .custom.retail_price[0], .custom.sale_price[0], (.custom.categories | join("|"))] | @csv' $file) >> $CSV_FILE
+done

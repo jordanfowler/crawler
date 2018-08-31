@@ -1,0 +1,6 @@
+#!env bash
+
+CSV_FILE=$1
+S3_FILE=$2
+
+aws s3 cp $CSV_FILE s3://ae-scraping/$S3_FILE
