@@ -143,7 +143,7 @@ class WebpageIndexer
       when String
         custom_index[key] = [page_parsed.css(value)].flatten.compact.collect { |n| n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ') }
       when Hash
-        if value['regex']
+        values = if value['regex']
           regex = Regexp.new(value['regex'])
           matches = page_body.scan(regex)
           matches.each do |match|
@@ -161,8 +161,17 @@ class WebpageIndexer
         elsif value['selector']
           selector, attribute = value['selector'], value['attribute']
           custom_index[key] = [page_parsed.css(value['selector'])].flatten.compact.collect do |n|
-            n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
+            if value['attribute'].present?
+              n[value['attribute']].to_s.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
+            else
+              n.text.strip.gsub("/n", ' ').gsub(/[ ]{2,}/, ' ')
+            end
           end
+        end
+
+        offset = value['offset'].to_i
+        if offset > 0
+          custom_index[key] = custom_index[key][offset..-1]
         end
       when Array
         custom_index[key] = value

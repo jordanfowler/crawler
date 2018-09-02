@@ -1,4 +1,4 @@
-#!env bash
+#/bin/bash
 
 CSV_FILE=$1
 S3_FILE=$2
